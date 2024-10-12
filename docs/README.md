@@ -1,9 +1,3 @@
-# Ultralytics Docs
-
-Ultralytics Docs are deployed to [https://docs.ultralytics.com](https://docs.ultralytics.com).
-
-[![pages-build-deployment](https://github.com/ultralytics/docs/actions/workflows/pages/pages-build-deployment/badge.svg)](https://github.com/ultralytics/docs/actions/workflows/pages/pages-build-deployment)  [![Check Broken links](https://github.com/ultralytics/docs/actions/workflows/links.yml/badge.svg)](https://github.com/ultralytics/docs/actions/workflows/links.yml)
-
 ## Install environment
 
 You can configure the required environment for the code based on the following instructions:
