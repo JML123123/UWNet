@@ -39,6 +39,11 @@ We also provide the model training script, and you can run it directly.
     ```
     cd UWNet-main && python val.py
     ```
+    
+## pretrained weights
+
+You can download our training dataset and pretrained model weights from the following link:https://github.com/JML123123/Underwarter-Datasets.
+
 
 ## Acknowledgement
 
