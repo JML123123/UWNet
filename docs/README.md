@@ -28,7 +28,7 @@ You can configure the required environment for the code based on the following i
 
 We have already configured the UWNet training file, and you can run it directly.
 
-    ```bash
+    ```
     cd UWNet-main && python train.py
     ```
 
@@ -36,7 +36,7 @@ We have already configured the UWNet training file, and you can run it directly.
 
 We also provide the model training script, and you can run it directly.
 
-    ```bash
+    ```
     cd UWNet-main && python val.py
     ```
 
