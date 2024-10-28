@@ -27,7 +27,7 @@ except:
 #     import selective_scan_cuda
 #     # from mamba_ssm.ops.selective_scan_interface import selective_scan_fn, selective_scan_ref
 
-__all__ = ("VSSBlock_YOLO", )
+__all__ = ("MSDBlock", )
 
 class LayerNorm2d(nn.Module):
 
@@ -486,7 +486,7 @@ class HybridFeatureIntegrationBlock(nn.Module):
         x = x + self.residual_conv(residual)
         return x
 
-class VSSBlock_YOLO(nn.Module):
+class MSDBlock(nn.Module):
     def __init__(
             self,
             in_channels: int = 0,
