@@ -27,7 +27,7 @@ except:
 #     import selective_scan_cuda
 #     # from mamba_ssm.ops.selective_scan_interface import selective_scan_fn, selective_scan_ref
 
-__all__ = ("MSDBlock", )
+__all__ = ("MSDBlock", "VSSBlock_YOLO")
 
 class LayerNorm2d(nn.Module):
 
@@ -568,5 +568,85 @@ class MSDBlock(nn.Module):
             x = x + self.drop_path(self.mlp(self.norm2(x)))  # FFN
         return x
 
+class VSSBlock_YOLO(nn.Module):
+    def __init__(
+            self,
+            in_channels: int = 0,
+            hidden_dim: int = 0,
+            drop_path: float = 0,
+            norm_layer: Callable[..., torch.nn.Module] = partial(LayerNorm2d, eps=1e-6),
+            # =============================
+            ssm_d_state: int = 16,
+            ssm_ratio=2.0,
+            ssm_rank_ratio=2.0,
+            ssm_dt_rank: Any = "auto",
+            ssm_act_layer=nn.SiLU,
+            ssm_conv: int = 3,
+            ssm_conv_bias=True,
+            ssm_drop_rate: float = 0,
+            ssm_init="v0",
+            forward_type="v2",
+            # =============================
+            mlp_ratio=4.0,
+            mlp_act_layer=nn.GELU,
+            mlp_drop_rate: float = 0.0,
+            # =============================
+            use_checkpoint: bool = False,
+            post_norm: bool = False,
+            **kwargs,
+    ):
+        super().__init__()
+        self.ssm_branch = ssm_ratio > 0
+        self.mlp_branch = mlp_ratio > 0
+        self.use_checkpoint = use_checkpoint
+        self.post_norm = post_norm
 
+        # proj
+        self.proj_conv = nn.Sequential(
+            nn.Conv2d(in_channels, hidden_dim, kernel_size=1, stride=1, padding=0, bias=True),
+            nn.BatchNorm2d(hidden_dim),
+            nn.SiLU()
+        )
+
+        if self.ssm_branch:
+            self.norm = norm_layer(hidden_dim)
+            self.op = SS2D(
+                d_model=hidden_dim,
+                d_state=ssm_d_state,
+                ssm_ratio=ssm_ratio,
+                ssm_rank_ratio=ssm_rank_ratio,
+                dt_rank=ssm_dt_rank,
+                act_layer=ssm_act_layer,
+                # ==========================
+                d_conv=ssm_conv,
+                conv_bias=ssm_conv_bias,
+                # ==========================
+                dropout=ssm_drop_rate,
+                # bias=False,
+                # ==========================
+                # dt_min=0.001,
+                # dt_max=0.1,
+                # dt_init="random",
+                # dt_scale="random",
+                # dt_init_floor=1e-4,
+                initialize=ssm_init,
+                # ==========================
+                forward_type=forward_type,
+            )
+
+        self.drop_path = DropPath(drop_path)
+        self.lsblock = HybridFeatureIntegrationBlock(hidden_dim)
+        if self.mlp_branch:
+            self.norm2 = norm_layer(hidden_dim)
+            mlp_hidden_dim = int(hidden_dim * mlp_ratio)
+            self.mlp = RGBlock(in_features=hidden_dim, hidden_features=mlp_hidden_dim, act_layer=mlp_act_layer,
+                               drop=mlp_drop_rate, channels_first=False)
+
+    def forward(self, input: torch.Tensor):
+        input = self.proj_conv(input)
+        X1 = self.lsblock(input)
+        x = input + self.drop_path(self.op(self.norm(X1)))
+        if self.mlp_branch:
+            x = x + self.drop_path(self.mlp(self.norm2(x)))  # FFN
+        return x
 
